@@ -112,10 +112,19 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     Return an initialized network.
     """
     if len(gpu_ids) > 0:
-        assert(torch.cuda.is_available())
-        net.to(gpu_ids[0])
-        if len(gpu_ids) > 1:
-            net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
+        # Check for MPS (Mac Silicon) first, then CUDA
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            net.to('mps')
+        elif torch.cuda.is_available():
+            net.to(gpu_ids[0])
+            if len(gpu_ids) > 1:
+                net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
+        else:
+            print("Warning: Neither CUDA nor MPS is available, using CPU instead.")
+            net.to('cpu')
+    else:
+        net.to('cpu')
+        
     init_weights(net, init_type, init_gain=init_gain)
     return net
 
@@ -263,7 +272,7 @@ class BASE_Transformer(ResNet):
         mlp_dim = 2*dim
 
         self.with_pos = with_pos
-        if with_pos is 'learned':
+        if with_pos == 'learned':
             self.pos_embedding = nn.Parameter(torch.randn(1, self.token_len*2, 32))
         decoder_pos_size = 256//4
         self.with_decoder_pos = with_decoder_pos
@@ -294,9 +303,9 @@ class BASE_Transformer(ResNet):
 
     def _forward_reshape_tokens(self, x):
         # b,c,h,w = x.shape
-        if self.pool_mode is 'max':
+        if self.pool_mode == 'max':
             x = F.adaptive_max_pool2d(x, [self.pooling_size, self.pooling_size])
-        elif self.pool_mode is 'ave':
+        elif self.pool_mode == 'ave':
             x = F.adaptive_avg_pool2d(x, [self.pooling_size, self.pooling_size])
         else:
             x = x

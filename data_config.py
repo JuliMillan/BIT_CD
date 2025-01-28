@@ -6,9 +6,11 @@ class DataConfig:
     def get_data_config(self, data_name):
         self.data_name = data_name
         if data_name == 'LEVIR':
-            self.root_dir = 'path to the root of LEVIR-CD dataset'
+            self.root_dir = './data/LEVIR/test-chipped'
         elif data_name == 'quick_start':
             self.root_dir = './samples/'
+        elif data_name == 'other':
+            self.root_dir = './data/'
         else:
             raise TypeError('%s has not defined' % data_name)
         return self

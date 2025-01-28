@@ -14,11 +14,15 @@ class CDEvaluator():
         # define G
         self.net_G = define_G(args=args, gpu_ids=args.gpu_ids)
 
-        self.device = torch.device("cuda:%s" % args.gpu_ids[0]
-                                   if torch.cuda.is_available() and len(args.gpu_ids)>0
-                                   else "cpu")
+        # Check for MPS (Mac Silicon) first, then CUDA
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            self.device = torch.device('mps')
+        elif torch.cuda.is_available() and len(args.gpu_ids) > 0:
+            self.device = torch.device(f"cuda:{args.gpu_ids[0]}")
+        else:
+            self.device = torch.device('cpu')
 
-        print(self.device)
+        print(f"Using device: {self.device}")
 
         self.checkpoint_dir = args.checkpoint_dir
 
@@ -62,7 +66,7 @@ class CDEvaluator():
 
     def _save_predictions(self):
         """
-        保存模型输出结果，二分类图像
+        Save the predictions to the prediction directory.
         """
 
         preds = self._visualize_pred()
