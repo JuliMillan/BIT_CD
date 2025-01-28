@@ -1,7 +1,3 @@
-"""
-变化检测数据集
-"""
-
 import os
 from PIL import Image
 import numpy as np
@@ -28,7 +24,7 @@ IGNORE = 255
 label_suffix='.png' # jpg for gan dataset, others : png
 
 def load_img_name_list(dataset_path):
-    img_name_list = np.loadtxt(dataset_path, dtype=np.str)
+    img_name_list = np.loadtxt(dataset_path, dtype=np.str_)
     if img_name_list.ndim == 2:
         return img_name_list[:, 0]
     return img_name_list
@@ -110,7 +106,7 @@ class CDDataset(ImageDataset):
         L_path = get_label_path(self.root_dir, self.img_name_list[index % self.A_size])
 
         label = np.array(Image.open(L_path), dtype=np.uint8)
-        #  二分类中，前景标注为255
+        #  normalize pixel values
         if self.label_transform == 'norm':
             label = label // 255
 
